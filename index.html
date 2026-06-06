@@ -2,281 +2,486 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GymProgress</title>
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/007AFF/FFFFFF?text=Gym">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FitCoach AI</title>
+    
+    <!-- Configuración PWA estricta para iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="apple-mobile-web-app-title" content="FitCoach AI">
+    <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=192&h=192&fit=crop&q=80">
+
+    <!-- Chart.js para análisis de rendimiento -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    
     <style>
         :root {
-            --bg-color: #000000;
-            --card-bg: #1C1C1E;
-            --accent-color: #30D158; /* Verde fitness */
-            --text-color: #FFFFFF;
-            --text-secondary: #8E8E93;
+            --bg-main: #090B0E;
+            --bg-card: #12161F;
+            --bg-input: #1A212D;
+            --accent-coaching: #00E676; /* Verde Inteligencia Artificial */
+            --accent-blue: #007AFF;
+            --accent-danger: #FF3B30;
+            --text-main: #FFFFFF;
+            --text-muted: #8A96A8;
+            --border: #222B3A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            padding-bottom: 60px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 50px 16px 90px 16px; /* Espacio para notch de iOS y barra de navegación inferior */
         }
 
-        h1, h2 {
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        h1 { color: var(--accent-color); }
-
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-        }
-
-        input, select, button {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 8px;
-            border: none;
-            background-color: #2C2C2E;
-            color: white;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        input:focus, select:focus {
-            outline: 2px solid var(--accent-color);
-        }
-
-        button {
-            background-color: var(--accent-color);
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 0;
-        }
-
-        .exercise-item {
+        header {
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #2C2C2E;
         }
 
-        .exercise-item:last-child {
-            border-bottom: none;
+        h1 { font-size: 24px; font-weight: 800; }
+        h1 span { color: var(--accent-coaching); }
+        .version { font-size: 11px; color: var(--text-muted); background: var(--border); padding: 4px 8px; border-radius: 20px; }
+
+        /* Sistema de pestañas estilo App */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background-color: rgba(18, 22, 31, 0.94);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 1000;
         }
 
-        .exercise-info {
+        .nav-item {
             display: flex;
             flex-direction: column;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            background: none;
+            border: none;
+            width: 33%;
         }
 
-        .exercise-date {
-            font-size: 12px;
-            color: var(--text-secondary);
+        .nav-item.active { color: var(--accent-coaching); }
+        .nav-icon { font-size: 20px; margin-bottom: 2px; }
+
+        /* Tarjetas e Interfaz */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.02);
         }
 
-        .delete-btn {
-            background-color: #FF453A;
-            color: white;
-            width: auto;
-            padding: 6px 10px;
-            font-size: 12px;
-            margin: 0;
+        h2 { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .coach-alert {
+            background: rgba(0, 230, 118, 0.08);
+            border-left: 4px solid var(--accent-coaching);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #E2E8F0;
+            margin-bottom: 14px;
         }
 
-        .chart-container {
-            position: relative;
-            height: 200px;
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.5px; }
+        
+        input, select {
             width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            font-size: 16px;
+            outline: none;
         }
+
+        input:focus, select:focus { border-color: var(--accent-coaching); }
+        .row { display: flex; gap: 12px; }
+        .col { flex: 1; }
+
+        button.btn-main {
+            width: 100%;
+            background-color: var(--accent-coaching);
+            color: #000000;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* Historial y Volúmenes */
+        .workout-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .workout-item:last-child { border-bottom: none; }
+        .workout-title { font-size: 15px; font-weight: 600; }
+        .workout-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            background: var(--bg-input);
+            color: var(--accent-blue);
+            margin-left: 6px;
+        }
+
+        .btn-del { background: none; border: none; color: var(--accent-danger); font-size: 12px; cursor: pointer; padding: 4px; }
+        .chart-container { position: relative; height: 200px; width: 100%; margin-top: 10px; }
+
+        /* Panel de Volumen Semanal */
+        .volume-grid { display: flex; flex-direction: column; gap: 10px; }
+        .volume-bar-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+        .volume-label { width: 80px; font-weight: 500; }
+        .volume-progress-bg { flex: 1; height: 8px; background: var(--bg-input); border-radius: 4px; margin: 0 12px; overflow: hidden; }
+        .volume-progress-fill { height: 100%; background: var(--accent-blue); width: 0%; transition: width 0.4s; }
+        .volume-progress-fill.optimal { background: var(--accent-coaching); }
+        .volume-count { width: 45px; text-align: right; color: var(--text-muted); font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <h1>GymProgress 💪</h1>
-    <p style="color: var(--text-secondary); margin-top: 0;">Tu progreso semanal</p>
+    <header>
+        <h1>FitCoach<span>AI</span></h1>
+        <div class="version">V2.1 - Coach Activo</div>
+    </header>
 
-    <div class="card">
-        <h2>Registrar Serie</h2>
-        <label for="exerciseName">Ejercicio</label>
-        <input type="text" id="exerciseName" placeholder="Ej: Press de Banca, Sentadillas" required>
-        
-        <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
-                <label for="weight">Peso (kg)</label>
-                <input type="number" id="weight" placeholder="50" step="any" required>
-            </div>
-            <div style="flex: 1;">
-                <label for="reps">Reticiones</label>
-                <input type="number" id="reps" placeholder="10" required>
+    <!-- ================= PESTAÑA 1: ENTRENAR ================= -->
+    <div id="tab-train" class="tab-content active">
+        <!-- RECOMENDACIÓN INTELIGENTE (ALGORITMO MYFITCOACH) -->
+        <div class="card">
+            <h2>🤖 Inteligencia Artificial</h2>
+            <div id="coachText" class="coach-alert">
+                Selecciona un ejercicio abajo para que el Coach calcule tu objetivo de Sobrecarga Progresiva.
             </div>
         </div>
-        
-        <button onclick="addWorkout()">Guardar Registro</button>
-    </div>
 
-    <div class="card">
-        <h2>Evolución (Carga Máxima)</h2>
-        <label for="filterExercise">Seleccionar Ejercicio</label>
-        <select id="filterExercise" onchange="updateChart()">
-            <option value="">-- Registra algo primero --</option>
-        </select>
-        <div class="chart-container">
-            <canvas id="progressChart"></canvas>
+        <!-- FORMULARIO DE REGISTRO -->
+        <div class="card">
+            <h2>📝 Registrar Serie Actual</h2>
+            <div class="form-group">
+                <label for="exerciseSelect">Ejercicio y Grupo Muscular</label>
+                <select id="exerciseSelect" onchange="runCoachEngine()">
+                    <!-- Pecho -->
+                    <option value="Press de Banca|Pecho">Press de Banca (Pecho)</option>
+                    <option value="Press Inclinado Mancuernas|Pecho">Press Inclinado Manc. (Pecho)</option>
+                    <!-- Espalda -->
+                    <option value="Dominadas|Espalda">Dominadas (Espalda)</option>
+                    <option value="Remo con Barra|Espalda">Remo con Barra (Espalda)</option>
+                    <!-- Pierna -->
+                    <option value="Sentadillas|Pierna">Sentadillas (Pierna)</option>
+                    <option value="Prensa de Piernas|Pierna">Prensa de Piernas (Pierna)</option>
+                    <!-- Hombro / Brazos -->
+                    <option value="Press Militar|Hombro">Press Militar (Hombro)</option>
+                    <option value="Curl de Bíceps|Brazos">Curl de Bíceps (Brazos)</option>
+                </select>
+            </div>
+
+            <div class="row form-group">
+                <div class="col">
+                    <label for="weightInput">Carga (kg)</label>
+                    <input type="number" id="weightInput" placeholder="Ej: 60" step="any" inputmode="decimal">
+                </div>
+                <div class="col">
+                    <label for="repsInput">Reps logradas</label>
+                    <input type="number" id="repsInput" placeholder="Ej: 10" inputmode="numeric">
+                </div>
+            </div>
+
+            <button class="btn-main" onclick="addSerie()">Guardar e Iniciar Recuperación</button>
         </div>
     </div>
 
-    <div class="card">
-        <h2>Historial Reciente</h2>
-        <div id="workoutList">
-            <p style="color: var(--text-secondary);">No hay entrenamientos registrados aún.</p>
+    <!-- ================= PESTAÑA 2: ANALÍTICA ================= -->
+    <div id="tab-analytics" class="tab-content">
+        <!-- DISTRIBUCIÓN DE VOLUMEN SEMANAL -->
+        <div class="card">
+            <h2>📊 Volumen Semanal (Series Efectivas)</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Objetivo recomendado por la IA: 10-20 series por grupo muscular.</p>
+            <div class="volume-grid" id="volumeContainer">
+                <!-- Se genera dinámicamente -->
+            </div>
+        </div>
+
+        <!-- GRÁFICA DE SOBRECARGA -->
+        <div class="card">
+            <h2>📈 Historial de Cargas Máximas</h2>
+            <div class="form-group">
+                <label for="chartFilter">Filtrar Gráfica</label>
+                <select id="chartFilter" onchange="renderAnalyticsChart()">
+                    <!-- Se llena solo -->
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="analyticsChart"></canvas>
+            </div>
         </div>
     </div>
+
+    <!-- ================= PESTAÑA 3: DIARIO ================= -->
+    <div id="tab-logs" class="tab-content">
+        <div class="card">
+            <h2>📋 Historial Completo de Series</h2>
+            <div id="historyContainer">
+                <!-- Listado completo -->
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVEGACIÓN INFERIOR (ESTILO APP NATIVA) -->
+    <nav class="nav-bar">
+        <button class="nav-item active" onclick="switchTab('tab-train', this)">
+            <div class="nav-icon">🏋️‍♂️</div>
+            <span>Entrenar</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('tab-analytics', this)">
+            <div class="nav-icon">📊</div>
+            <span>Progreso</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('tab-logs', this)">
+            <div class="nav-icon">📋</div>
+            <span>Diario</span>
+        </button>
+    </nav>
 
     <script>
-        // Cargar datos iniciales de localStorage
-        let workouts = JSON.parse(localStorage.getItem('gymWorkouts')) || [];
-        let myChart = null;
+        // Almacenamiento centralizado
+        let gymDatabase = [];
+        let chartObj = null;
 
-        // Guardar y actualizar interfaz al arrancar
+        try {
+            gymDatabase = JSON.parse(localStorage.getItem('fitCoachAIData')) || [];
+        } catch(e) {
+            gymDatabase = [];
+        }
+
         window.onload = function() {
-            updateWorkoutList();
-            updateDropdown();
-            initChart();
+            initApp();
         };
 
-        function addWorkout() {
-            const name = document.getElementById('exerciseName').value.trim();
-            const weight = parseFloat(document.getElementById('weight').value);
-            const reps = parseInt(document.getElementById('reps').value);
-            const date = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+        function initApp() {
+            runCoachEngine();
+            buildVolumeTracker();
+            buildDropdownFilters();
+            setTimeout(renderAnalyticsChart, 100);
+            renderLogHistory();
+        }
 
-            if (!name || isNaN(weight) || isNaN(reps)) {
-                alert('Por favor, rellena todos los campos correctamente.');
+        // Navegación de pestañas
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+
+            if(tabId === 'tab-analytics') {
+                buildVolumeTracker();
+                buildDropdownFilters();
+                setTimeout(renderAnalyticsChart, 50);
+            }
+            if(tabId === 'tab-logs') {
+                renderLogHistory();
+            }
+        }
+
+        // MOTOR DE INTELIGENCIA ARTIFICIAL (Algoritmo de Progresión)
+        function runCoachEngine() {
+            const selectValue = document.getElementById('exerciseSelect').value;
+            const [exerciseName, muscle] = selectValue.split('|');
+            const coachText = document.getElementById('coachText');
+
+            const filteredData = gymDatabase.filter(item => item.name === exerciseName);
+
+            if(filteredData.length === 0) {
+                coachText.innerHTML = `🎯 <b>¡Nuevo ejercicio detectado!</b> Para configurar el algoritmo de <b>${exerciseName}</b>, haz una primera serie de prueba buscando quedarte cerca del fallo muscular en un rango de 8 a 12 repeticiones.`;
                 return;
             }
 
-            const newRecord = { id: Date.now(), name, weight, reps, date };
-            workouts.push(newRecord);
-            localStorage.setItem('gymWorkouts', JSON.stringify(workouts));
+            // Conseguir el último registro absoluto de este ejercicio
+            const lastRecord = filteredData[filteredData.length - 1];
 
-            // Resetear inputs de peso y reps (dejamos el nombre por si hace otra serie)
-            document.getElementById('weight').value = '';
-            document.getElementById('reps').value = '';
-
-            updateWorkoutList();
-            updateDropdown();
-            updateChart();
+            // Cálculo automatizado basado en rendimiento previo
+            if (lastRecord.reps >= 12) {
+                const nextWeight = lastRecord.weight + 2.5;
+                coachText.innerHTML = `🔥 <b>¡Sobrecarga Progresiva Completada!</b> Superaste el umbral de hipertrofia con ${lastRecord.reps} reps en tu última sesión. <br><br><b>Tu objetivo hoy:</b> Sube la carga a <b>${nextWeight} kg</b> e intenta trabajar duro en un rango de 8-10 repeticiones.`;
+            } else if (lastRecord.reps < 8) {
+                const lowerWeight = Math.max(0, lastRecord.weight - 2.5);
+                coachText.innerHTML = `⚠️ <b>Fatiga excesiva detectada:</b> La última vez solo lograste hacer ${lastRecord.reps} repeticiones. Ese peso está limitando tu volumen efectivo.<br><br><b>Tu objetivo hoy:</b> Baja la carga a <b>${lowerWeight} kg</b> para regresar de forma segura al rango de estímulo muscular óptimo (8-12 reps).`;
+            } else {
+                coachText.innerHTML = `💪 <b>Zona de Adaptación Dinámica:</b> Estás progresando bien con ${lastRecord.weight} kg (${lastRecord.reps} reps). <br><br><b>Tu objetivo hoy:</b> Mantén estrictamente los <b>${lastRecord.weight} kg</b>, pero exige a tu sistema nervioso sacar <b>${lastRecord.reps + 1} repeticiones</b> totales.`;
+            }
         }
 
-        function deleteWorkout(id) {
-            workouts = workouts.filter(w => w.id !== id);
-            localStorage.setItem('gymWorkouts', JSON.stringify(workouts));
-            updateWorkoutList();
-            updateDropdown();
-            updateChart();
-        }
+        // AGREGAR NUEVO REGISTRO
+        function addSerie() {
+            const selectValue = document.getElementById('exerciseSelect').value;
+            const [exerciseName, muscle] = selectValue.split('|');
+            const weight = parseFloat(document.getElementById('weightInput').value);
+            const reps = parseInt(document.getElementById('repsInput').value);
 
-        function updateWorkoutList() {
-            const listContainer = document.getElementById('workoutList');
-            if (workouts.length === 0) {
-                listContainer.innerHTML = '<p style="color: var(--text-secondary);">No hay entrenamientos registrados.</p>';
+            if(!weight || !reps || weight <= 0 || reps <= 0) {
+                alert("Introduce valores reales de peso y repeticiones para procesar tu rendimiento.");
                 return;
             }
 
-            // Mostrar los últimos 5 registros primero
-            const recent = [...workouts].reverse().slice(0, 5);
-            listContainer.innerHTML = recent.map(w => `
-                <div class="exercise-item">
-                    <div class="exercise-info">
-                        <strong>${w.name}</strong>
-                        <span class="exercise-date">${w.date} - ${w.weight} kg x ${w.reps} reps</span>
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+
+            const newLog = {
+                id: Date.now(),
+                name: exerciseName,
+                muscle: muscle,
+                weight: weight,
+                reps: reps,
+                date: dateStr,
+                timestamp: Date.now()
+            };
+
+            gymDatabase.push(newLog);
+            localStorage.setItem('fitCoachAIData', JSON.stringify(gymDatabase));
+
+            // Limpieza y feedback rápido
+            document.getElementById('weightInput').value = '';
+            document.getElementById('repsInput').value = '';
+            
+            runCoachEngine();
+            alert("Serie registrada. ¡Sigue así!");
+        }
+
+        function removeLog(id) {
+            gymDatabase = gymDatabase.filter(item => item.id !== id);
+            localStorage.setItem('fitCoachAIData', JSON.stringify(gymDatabase));
+            renderLogHistory();
+        }
+
+        // PANEL DE VOLUMEN DE ENTRENAMIENTO SEMANAL
+        function buildVolumeTracker() {
+            const container = document.getElementById('volumeContainer');
+            const muscles = ['Pecho', 'Espalda', 'Pierna', 'Hombro', 'Brazos'];
+            
+            // Contar cuántas series se han hecho por grupo muscular
+            const counts = { Pecho: 0, Espalda: 0, Pierna: 0, Hombro: 0, Brazos: 0 };
+            
+            // Filtramos las series de los últimos 7 días
+            const exactWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+            gymDatabase.forEach(item => {
+                if(item.timestamp >= exactWeekAgo && counts[item.muscle] !== undefined) {
+                    counts[item.muscle]++;
+                }
+            });
+
+            container.innerHTML = muscles.map(m => {
+                const series = counts[m];
+                // El volumen óptimo en culturismo/fitness suele ser entre 10 y 20 series por semana
+                const percent = Math.min(100, (series / 15) * 100);
+                const isOptimal = series >= 10 ? 'optimal' : '';
+
+                return `
+                    <div class="volume-bar-row">
+                        <div class="volume-label">${m}</div>
+                        <div class="volume-progress-bg">
+                            <div class="volume-progress-fill ${isOptimal}" style="width: ${percent}%"></div>
+                        </div>
+                        <div class="volume-count">${series} / 15 s</div>
                     </div>
-                    <button class="delete-btn" onclick="deleteWorkout(${w.id})">X</button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        function updateDropdown() {
-            const dropdown = document.getElementById('filterExercise');
-            const uniqueExercises = [...new Set(workouts.map(w => w.name))];
-            
-            const currentSelection = dropdown.value;
+        // FILTROS GRÁFICA
+        function buildDropdownFilters() {
+            const filter = document.getElementById('chartFilter');
+            const currentSelection = filter.value;
+            const uniqueNames = [...new Set(gymDatabase.map(i => i.name))].sort();
 
-            if (uniqueExercises.length === 0) {
-                dropdown.innerHTML = '<option value="">-- Registra algo primero --</option>';
+            if(uniqueNames.length === 0) {
+                filter.innerHTML = '<option value="">-- Sin entrenamientos guardados --</option>';
                 return;
             }
 
-            dropdown.innerHTML = uniqueExercises.map(e => `<option value="${e}">${e}</option>`).join('');
-            
-            if (uniqueExercises.includes(currentSelection)) {
-                dropdown.value = currentSelection;
+            filter.innerHTML = uniqueNames.map(n => `<option value="${n}">${n}</option>`).join('');
+            if(uniqueNames.includes(currentSelection)) {
+                filter.value = currentSelection;
             }
         }
 
-        function initChart() {
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            myChart = new Chart(ctx, {
+        // RENDERIZADO DE LA GRÁFICA DE RENDIMIENTO
+        function renderAnalyticsChart() {
+            const canvas = document.getElementById('analyticsChart');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const targetExercise = document.getElementById('chartFilter').value;
+
+            if(chartObj) {
+                chartObj.destroy();
+                chartObj = null;
+            }
+
+            if(!targetExercise || typeof Chart === 'undefined') return;
+
+            const filtered = gymDatabase.filter(i => i.name === targetExercise).sort((a,b) => a.timestamp - b.timestamp);
+            
+            // Agrupamos por fecha buscando la carga más alta de cada día
+            const tracking = {};
+            filtered.forEach(item => {
+                if(!tracking[item.date] || tracking[item.date] < item.weight) {
+                    tracking[item.date] = item.weight;
+                }
+            });
+
+            chartObj = new Chart(ctx, {
                 type: 'line',
-                data: { labels: [], datasets: [{ label: 'Peso Máximo (kg)', data: [], borderColor: '#30D158', tension: 0.2, fill: false }] },
+                data: {
+                    labels: Object.keys(tracking),
+                    datasets: [{
+                        data: Object.values(tracking),
+                        borderColor: '#00E676',
+                        borderWidth: 3,
+                        backgroundColor: 'rgba(0, 230, 118, 0.04)',
+                        fill: true,
+                        tension: 0.15,
+                        pointBackgroundColor: '#00E676'
+                    }]
+                },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        x: { grid: { color: '#2C2C2E' }, ticks: { color: '#8E8E93' } },
-                        y: { grid: { color: '#2C2C2E' }, ticks: { color: '#8E8E93' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-            updateChart();
-        }
-
-        function updateChart() {
-            if (!myChart) return;
-            
-            const selectedExercise = document.getElementById('filterExercise').value;
-            if (!selectedExercise) {
-                myChart.data.labels = [];
-                myChart.data.datasets[0].data = [];
-                myChart.update();
-                return;
-            }
-
-            // Filtrar entrenamientos del ejercicio seleccionado
-            const filtered = workouts.filter(w => w.name === selectedExercise);
-
-            // Agrupar por fecha quedándonos con el peso máximo de ese día
-            const dataByDate = {};
-            filtered.forEach(w => {
-                if (!dataByDate[w.date] || dataByDate[w.date] < w.weight) {
-                    dataByDate[w.date] = w.weight;
-                }
-            });
-
-            myChart.data.labels = Object.keys(dataByDate);
-            myChart.data.datasets[0].data = Object.values(dataByDate);
-            myChart.update();
-        }
-    </script>
-</body>
-</html>
+                    plugins:
